@@ -1,66 +1,28 @@
 package be.izmno.piggybank
 
-import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.util.AttributeSet
-import android.view.View
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 
-class PiggyBankView @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : View(context, attrs, defStyleAttr) {
-
-    private val pigDrawable = ContextCompat.getDrawable(context, R.drawable.piggy_bank_icon)?.mutate()
+@Composable
+fun PiggyBankDisplay(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val pigDrawable = remember {
+        ContextCompat.getDrawable(context, R.drawable.piggy_bank_icon)?.mutate()
+    }
     
-    private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        color = Color.BLACK
-        textAlign = Paint.Align.CENTER
-        isFakeBoldText = true
-    }
-
-    var text: String = ""
-        set(value) {
-            field = value
-            invalidate()
-            requestLayout()
-        }
-
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val widthMode = MeasureSpec.getMode(widthMeasureSpec)
-        val widthSize = MeasureSpec.getSize(widthMeasureSpec)
-        val heightMode = MeasureSpec.getMode(heightMeasureSpec)
-        val heightSize = MeasureSpec.getSize(heightMeasureSpec)
-
-        // Calculate desired size: pig should be 50% of width, maintaining aspect ratio (1024x1024)
-        val desiredPigWidth = widthSize * 0.5f
-        val desiredPigHeight = desiredPigWidth // Square aspect ratio
-        val desiredHeight = (desiredPigHeight + padding * 2).toInt()
-
-        val width = when (widthMode) {
-            MeasureSpec.EXACTLY -> widthSize
-            MeasureSpec.AT_MOST -> widthSize
-            else -> widthSize
-        }
-
-        val height = when (heightMode) {
-            MeasureSpec.EXACTLY -> heightSize
-            MeasureSpec.AT_MOST -> minOf(desiredHeight, heightSize)
-            else -> desiredHeight
-        }
-
-        setMeasuredDimension(width, height)
-    }
-
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-
-        val width = width.toFloat()
-        val height = height.toFloat()
+    Canvas(modifier = modifier.fillMaxSize()) {
+        val width = size.width
+        val height = size.height
         
         // Calculate pig size: 50% of view width
         val pigWidth = width * 0.5f
@@ -73,50 +35,51 @@ class PiggyBankView @JvmOverloads constructor(
         val pigBottom = pigTop + pigHeight
         
         // Draw the pig icon
-        pigDrawable?.let {
-            it.setBounds(
+        pigDrawable?.let { drawable ->
+            drawable.setBounds(
                 pigLeft.toInt(),
                 pigTop.toInt(),
                 pigRight.toInt(),
                 pigBottom.toInt()
             )
-            it.draw(canvas)
+            drawIntoCanvas { canvas ->
+                drawable.draw(canvas.nativeCanvas)
+            }
         }
         
         // Draw text centered in the pig
         if (text.isNotEmpty()) {
+            val testText = text.ifEmpty { "€0.00" }
+            val pigWidthForText = pigWidth
+            val pigHeightForText = pigHeight
+            
             // Calculate text size based on pig dimensions
-            val textSize = calculateTextSize(pigWidth, pigHeight)
-            textPaint.textSize = textSize
+            var textSize = 48f
+            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.BLACK
+                textAlign = android.graphics.Paint.Align.CENTER
+                isFakeBoldText = true
+            }
+            
+            // Adjust text size to fit within the available space (centered in pig)
+            paint.textSize = textSize
+            while (paint.measureText(testText) > pigWidthForText * 0.8f && textSize > 12f) {
+                textSize -= 2f
+                paint.textSize = textSize
+            }
+            
+            while ((paint.descent() - paint.ascent()) > pigHeightForText * 0.3f && textSize > 12f) {
+                textSize -= 2f
+                paint.textSize = textSize
+            }
             
             // Center text in the pig icon
             val textX = width / 2
-            val textY = height / 2 - (textPaint.descent() + textPaint.ascent()) / 2
-            canvas.drawText(text, textX, textY, textPaint)
+            val textY = height / 2 - (paint.descent() + paint.ascent()) / 2
+            
+            drawIntoCanvas { canvas ->
+                canvas.nativeCanvas.drawText(text, textX, textY, paint)
+            }
         }
-    }
-
-    private fun calculateTextSize(availableWidth: Float, availableHeight: Float): Float {
-        val testText = text.ifEmpty { "€0.00" }
-        var textSize = 48f
-        textPaint.textSize = textSize
-
-        // Adjust text size to fit within the available space (centered in pig)
-        while (textPaint.measureText(testText) > availableWidth * 0.8f && textSize > 12f) {
-            textSize -= 2f
-            textPaint.textSize = textSize
-        }
-
-        while ((textPaint.descent() - textPaint.ascent()) > availableHeight * 0.3f && textSize > 12f) {
-            textSize -= 2f
-            textPaint.textSize = textSize
-        }
-
-        return textSize
-    }
-    
-    companion object {
-        private const val padding = 20f
     }
 }
-

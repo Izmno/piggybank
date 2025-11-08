@@ -1,104 +1,130 @@
 package be.izmno.piggybank
 
 import android.os.Bundle
-import android.view.Menu
-import android.view.ViewGroup
-import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.fragment.app.FragmentContainerView
-import androidx.navigation.createGraph
-import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.fragment.fragment
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.navigation.ui.setupWithNavController
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import be.izmno.piggybank.ui.theme.PiggyBankTheme
 
-class MainActivity : AppCompatActivity() {
+sealed class Screen(val route: String, val titleResId: Int, val iconResId: Int? = null) {
+    object Home : Screen("home", R.string.title_home, R.drawable.piggy_bank_icon)
+    object LogEntries : Screen("log_entries", R.string.title_log_entries)
+}
 
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // Create root ConstraintLayout
-        val rootLayout = ConstraintLayout(this).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-        }
-        
-        // Create FragmentContainerView
-        val fragmentContainerView = FragmentContainerView(this).apply {
-            id = R.id.nav_host_fragment
-            layoutParams = ConstraintLayout.LayoutParams(
-                ConstraintLayout.LayoutParams.MATCH_CONSTRAINT,
-                ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
-            ).apply {
-                bottomToTop = R.id.nav_view
-                startToStart = ConstraintLayout.LayoutParams.PARENT_ID
-                endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
-                topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+        setContent {
+            PiggyBankTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    MainScreen()
+                }
             }
         }
-        
-        // Create BottomNavigationView with programmatic menu
-        val navView = BottomNavigationView(this).apply {
-            id = R.id.nav_view
-            layoutParams = ConstraintLayout.LayoutParams(
-                ConstraintLayout.LayoutParams.MATCH_CONSTRAINT,
-                ConstraintLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
-                startToStart = ConstraintLayout.LayoutParams.PARENT_ID
-                endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
-            }
-            // Create menu programmatically
-            menu.add(Menu.NONE, R.id.navigation_home, Menu.NONE, getString(R.string.title_home))
-                .setIcon(R.drawable.piggy_bank_icon)
-            menu.add(Menu.NONE, R.id.navigation_log_entries, Menu.NONE, getString(R.string.title_log_entries))
-                .setIcon(android.R.drawable.ic_menu_recent_history)
-        }
-        
-        // Add views to root layout
-        rootLayout.addView(fragmentContainerView)
-        rootLayout.addView(navView)
-        
-        setContentView(rootLayout)
+    }
+}
 
-        // Create and add NavHostFragment with programmatic navigation graph
-        val navHostFragment = NavHostFragment()
-        
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.nav_host_fragment, navHostFragment)
-            .setPrimaryNavigationFragment(navHostFragment)
-            .commitNow()
-
-        // Create navigation graph programmatically
-        val navController = navHostFragment.navController
-        
-        // Create navigation graph using createGraph extension function
-        val navGraph = navController.createGraph(
-            id = R.id.mobile_navigation,
-            startDestination = R.id.navigation_home
+@Composable
+fun MainScreen() {
+    val navController = rememberNavController()
+    
+    ScaffoldWithBottomBar(navController = navController) {
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Home.route,
+            modifier = Modifier.fillMaxSize()
         ) {
-            fragment<HomeFragment>(R.id.navigation_home) {
-                label = getString(R.string.title_home)
+            composable(Screen.Home.route) {
+                HomeScreen()
             }
-            fragment<LogEntriesFragment>(R.id.navigation_log_entries) {
-                label = getString(R.string.title_log_entries)
+            composable(Screen.LogEntries.route) {
+                LogEntriesScreen()
             }
         }
-        
-        // Set the graph on the nav controller
-        navController.graph = navGraph
+    }
+}
 
-        val appBarConfiguration = AppBarConfiguration(
-            setOf(
-                R.id.navigation_home,
-                R.id.navigation_log_entries
-            )
-        )
-        setupActionBarWithNavController(navController, appBarConfiguration)
-        navView.setupWithNavController(navController)
+@Composable
+fun ScaffoldWithBottomBar(
+    navController: NavHostController,
+    content: @Composable () -> Unit
+) {
+    val items = listOf(
+        Screen.Home,
+        Screen.LogEntries
+    )
+    
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+    
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                items.forEach { screen ->
+                    NavigationBarItem(
+                        icon = {
+                            when (screen) {
+                                is Screen.Home -> {
+                                    Icon(
+                                        painter = painterResource(id = screen.iconResId!!),
+                                        contentDescription = stringResource(screen.titleResId)
+                                    )
+                                }
+                                is Screen.LogEntries -> {
+                                    Icon(
+                                        imageVector = Icons.Default.History,
+                                        contentDescription = stringResource(screen.titleResId)
+                                    )
+                                }
+                            }
+                        },
+                        label = { Text(stringResource(screen.titleResId)) },
+                        selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                        onClick = {
+                            navController.navigate(screen.route) {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            content()
+        }
     }
 }

@@ -1,201 +1,186 @@
 package be.izmno.piggybank
 
-import android.os.Bundle
-import android.text.InputType
-import android.util.TypedValue
-import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
-import androidx.core.content.ContextCompat
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.fragment.app.Fragment
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import java.text.DecimalFormat
 
-class HomeFragment : Fragment() {
-    private lateinit var piggyBankView: PiggyBankView
-    private lateinit var clickButton: MaterialButton
-    private lateinit var customAmountButton: TextView
-
-    override fun onCreateView(
-        inflater: android.view.LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        val context = requireContext()
-        
-        // Convert dp to pixels
-        val marginTop32dp = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            32f,
-            resources.displayMetrics
-        ).toInt()
-        
-        val marginTop16dp = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            16f,
-            resources.displayMetrics
-        ).toInt()
-        
-        // Create root ConstraintLayout
-        val rootLayout = ConstraintLayout(context).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-        }
-        
-        // Create PiggyBankView for total amount
-        piggyBankView = PiggyBankView(context).apply {
-            id = R.id.counterText
-            layoutParams = ConstraintLayout.LayoutParams(
-                ConstraintLayout.LayoutParams.WRAP_CONTENT,
-                ConstraintLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomToTop = R.id.clickButton
-                startToStart = ConstraintLayout.LayoutParams.PARENT_ID
-                endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
-                topToTop = ConstraintLayout.LayoutParams.PARENT_ID
-                verticalChainStyle = ConstraintLayout.LayoutParams.CHAIN_PACKED
-            }
-        }
-        
-        // Create MaterialButton
-        clickButton = MaterialButton(context).apply {
-            id = R.id.clickButton
-            text = getString(R.string.click_button)
-            textSize = 18f
-            layoutParams = ConstraintLayout.LayoutParams(
-                ConstraintLayout.LayoutParams.WRAP_CONTENT,
-                ConstraintLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                topMargin = marginTop32dp
-                bottomToTop = R.id.customAmountButton
-                startToStart = ConstraintLayout.LayoutParams.PARENT_ID
-                endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
-                topToBottom = R.id.counterText
-            }
-        }
-        
-        // Create custom amount button (clickable text)
-        customAmountButton = TextView(context).apply {
-            id = R.id.customAmountButton
-            text = getString(R.string.add_custom_amount)
-            textSize = 14f
-            setTextColor(ContextCompat.getColor(context, android.R.color.holo_blue_dark))
-            setPadding(0, marginTop16dp, 0, 0)
-            layoutParams = ConstraintLayout.LayoutParams(
-                ConstraintLayout.LayoutParams.WRAP_CONTENT,
-                ConstraintLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
-                startToStart = ConstraintLayout.LayoutParams.PARENT_ID
-                endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
-                topToBottom = R.id.clickButton
-            }
-        }
-        
-        // Add views to root layout
-        rootLayout.addView(piggyBankView)
-        rootLayout.addView(clickButton)
-        rootLayout.addView(customAmountButton)
-        
-        return rootLayout
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        // Initialize repository
-        LogEntryRepository.initialize(requireContext())
-        
-        // Update total amount display
-        updateTotalAmount()
-
-        clickButton.setOnClickListener {
-            val entry = LogEntry(
-                timestamp = System.currentTimeMillis(),
-                amount = 15.0
-            )
-            LogEntryRepository.addEntry(entry)
-            updateTotalAmount()
-        }
-        
-        customAmountButton.setOnClickListener {
-            showCustomAmountDialog()
-        }
+@Composable
+fun HomeScreen() {
+    val context = LocalContext.current
+    
+    // Initialize repository
+    LaunchedEffect(Unit) {
+        LogEntryRepository.initialize(context)
     }
     
-    override fun onResume() {
-        super.onResume()
-        // Update total when returning to this fragment (in case entries were deleted elsewhere)
+    var totalAmount by remember { mutableStateOf(0.0) }
+    var showCustomAmountDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+    var amountText by remember { mutableStateOf("") }
+    
+    // Update total amount
+    fun updateTotalAmount() {
+        totalAmount = LogEntryRepository.getTotalAmount()
+    }
+    
+    // Initial load and update on resume
+    LaunchedEffect(Unit) {
         updateTotalAmount()
     }
     
-    private fun updateTotalAmount() {
-        val total = LogEntryRepository.getTotalAmount()
-        val formatter = DecimalFormat("#0.00")
-        piggyBankView.text = "€${formatter.format(total)}"
+    // Update when returning to this screen
+    DisposableEffect(Unit) {
+        updateTotalAmount()
+        onDispose { }
     }
     
-    private fun showCustomAmountDialog() {
-        val context = requireContext()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        // PiggyBankDisplay
+        PiggyBankDisplay(
+            text = "€${DecimalFormat("#0.00").format(totalAmount)}",
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        )
         
-        // Create input layout and edit text
-        val inputLayout = TextInputLayout(context).apply {
-            hint = getString(R.string.dialog_amount_label)
-            setPadding(
-                TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20f, resources.displayMetrics).toInt(),
-                0,
-                TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20f, resources.displayMetrics).toInt(),
-                0
+        Spacer(modifier = Modifier.height(32.dp))
+        
+        // Add €15 Button
+        Button(
+            onClick = {
+                val entry = LogEntry(
+                    timestamp = System.currentTimeMillis(),
+                    amount = 15.0
+                )
+                LogEntryRepository.addEntry(entry)
+                updateTotalAmount()
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = stringResource(R.string.click_button),
+                fontSize = 18.sp
             )
         }
         
-        val inputEditText = TextInputEditText(context).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
-            hint = "0.00"
-        }
+        Spacer(modifier = Modifier.height(16.dp))
         
-        inputLayout.addView(inputEditText)
-        
-        MaterialAlertDialogBuilder(context)
-            .setTitle(getString(R.string.dialog_add_custom_amount_title))
-            .setView(inputLayout)
-            .setPositiveButton(getString(R.string.dialog_confirm)) { _, _ ->
-                val inputText = inputEditText.text?.toString()?.trim()
-                if (!inputText.isNullOrEmpty()) {
-                    try {
-                        val amount = inputText.toDouble()
-                        if (amount > 0) {
-                            val entry = LogEntry(
-                                timestamp = System.currentTimeMillis(),
-                                amount = amount
-                            )
-                            LogEntryRepository.addEntry(entry)
-                            updateTotalAmount()
-                        } else {
-                            showErrorDialog(getString(R.string.dialog_invalid_amount))
+        // Custom Amount Button
+        Text(
+            text = stringResource(R.string.add_custom_amount),
+            fontSize = 14.sp,
+            color = androidx.compose.ui.graphics.Color(0xFF1976D2), // holo_blue_dark
+            modifier = Modifier.clickable {
+                showCustomAmountDialog = true
+            }
+        )
+    }
+    
+    // Custom Amount Dialog
+    if (showCustomAmountDialog) {
+        AlertDialog(
+            onDismissRequest = { showCustomAmountDialog = false },
+            title = { Text(stringResource(R.string.dialog_add_custom_amount_title)) },
+            text = {
+                OutlinedTextField(
+                    value = amountText,
+                    onValueChange = { amountText = it },
+                    label = { Text(stringResource(R.string.dialog_amount_label)) },
+                    placeholder = { Text("0.00") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val inputText = amountText.trim()
+                        if (inputText.isNotEmpty()) {
+                            try {
+                                val amount = inputText.toDouble()
+                                if (amount > 0) {
+                                    val entry = LogEntry(
+                                        timestamp = System.currentTimeMillis(),
+                                        amount = amount
+                                    )
+                                    LogEntryRepository.addEntry(entry)
+                                    updateTotalAmount()
+                                    showCustomAmountDialog = false
+                                    amountText = ""
+                                } else {
+                                    errorMessage = stringResource(R.string.dialog_invalid_amount)
+                                    showErrorDialog = true
+                                }
+                            } catch (e: NumberFormatException) {
+                                errorMessage = stringResource(R.string.dialog_invalid_amount)
+                                showErrorDialog = true
+                            }
                         }
-                    } catch (e: NumberFormatException) {
-                        showErrorDialog(getString(R.string.dialog_invalid_amount))
                     }
+                ) {
+                    Text(stringResource(R.string.dialog_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showCustomAmountDialog = false
+                        amountText = ""
+                    }
+                ) {
+                    Text(stringResource(R.string.dialog_cancel))
                 }
             }
-            .setNegativeButton(getString(R.string.dialog_cancel), null)
-            .show()
+        )
     }
     
-    private fun showErrorDialog(message: String) {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Error")
-            .setMessage(message)
-            .setPositiveButton("OK", null)
-            .show()
+    // Error Dialog
+    if (showErrorDialog) {
+        AlertDialog(
+            onDismissRequest = { showErrorDialog = false },
+            title = { Text("Error") },
+            text = { Text(errorMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = { showErrorDialog = false }
+                ) {
+                    Text("OK")
+                }
+            }
+        )
     }
 }
-
-

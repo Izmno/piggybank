@@ -20,9 +20,6 @@ release/
 .gradle/
 build/
 
-# Gradle wrapper JAR (can be regenerated)
-gradle/wrapper/gradle-wrapper.jar
-
 # Local configuration file (sdk path, etc)
 local.properties
 

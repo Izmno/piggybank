@@ -44,6 +44,9 @@ fun HomeScreen() {
     var errorMessage by remember { mutableStateOf("") }
     var amountText by remember { mutableStateOf("") }
     
+    // Get string resources
+    val invalidAmountMessage = stringResource(R.string.dialog_invalid_amount)
+    
     // Update total amount
     fun updateTotalAmount() {
         totalAmount = LogEntryRepository.getTotalAmount()
@@ -130,23 +133,18 @@ fun HomeScreen() {
                     onClick = {
                         val inputText = amountText.trim()
                         if (inputText.isNotEmpty()) {
-                            try {
-                                val amount = inputText.toDouble()
-                                if (amount > 0) {
-                                    val entry = LogEntry(
-                                        timestamp = System.currentTimeMillis(),
-                                        amount = amount
-                                    )
-                                    LogEntryRepository.addEntry(entry)
-                                    updateTotalAmount()
-                                    showCustomAmountDialog = false
-                                    amountText = ""
-                                } else {
-                                    errorMessage = stringResource(R.string.dialog_invalid_amount)
-                                    showErrorDialog = true
-                                }
-                            } catch (e: NumberFormatException) {
-                                errorMessage = stringResource(R.string.dialog_invalid_amount)
+                            val amount = inputText.toDoubleOrNull()
+                            if (amount != null && amount > 0) {
+                                val entry = LogEntry(
+                                    timestamp = System.currentTimeMillis(),
+                                    amount = amount
+                                )
+                                LogEntryRepository.addEntry(entry)
+                                updateTotalAmount()
+                                showCustomAmountDialog = false
+                                amountText = ""
+                            } else {
+                                errorMessage = invalidAmountMessage
                                 showErrorDialog = true
                             }
                         }

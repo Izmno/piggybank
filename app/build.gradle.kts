@@ -72,6 +72,9 @@ dependencies {
     // Core Android
     implementation("androidx.core:core-ktx:1.12.0")
     
+    // Material Components (for XML theme)
+    implementation("com.google.android.material:material:1.11.0")
+    
     // Compose BOM
     val composeBom = platform("androidx.compose:compose-bom:2024.02.00")
     implementation(composeBom)

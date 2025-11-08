@@ -5,10 +5,11 @@ on:
     workflows: ["Deploy Release to Firebase App Distribution"]
     types:
       - completed
+  workflow_dispatch:
 
 jobs:
   bump-version:
-    if: github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -55,13 +56,14 @@ jobs:
 
       - name: Create Pull Request and Enable Auto-merge
         run: |
-          PR_NUMBER=$(gh pr create \
+          PR_URL=$(gh pr create \
             --title ":bookmark: Bump version code to ${{ steps.bump.outputs.new_version }}" \
             --body "Automatically created after successful deployment" \
             --base main \
-            --head "${{ steps.branch.outputs.branch_name }}" \
-            --json number \
-            --jq '.number')
+            --head "${{ steps.branch.outputs.branch_name }}")
+          
+          # Extract PR number from URL (format: https://github.com/owner/repo/pull/123)
+          PR_NUMBER=$(echo "$PR_URL" | sed -n 's|.*/pull/\([0-9]*\).*|\1|p')
           
           echo "Created PR #$PR_NUMBER"
           

@@ -1,0 +1,28 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.configuration.maven.userSettings": null,
+    "java.import.gradle.enabled": true,
+    "java.import.gradle.wrapper.enabled": true,
+    "java.import.gradle.java.home": null,
+    "java.import.gradle.version": null,
+    "java.import.gradle.offline.enabled": false,
+    "java.import.gradle.arguments": "",
+    "java.import.gradle.jvmArguments": "",
+    "java.import.gradle.user.home": null,
+    "java.import.gradle.home": null,
+    "java.project.sourcePaths": [
+        "app/src/main/java"
+    ],
+    "java.project.outputPath": "app/build/intermediates/javac",
+    "java.project.referencedLibraries": [
+        "app/build/intermediates/**/*.jar",
+        "app/build/intermediates/**/*.aar"
+    ],
+    "kotlin.languageServer.enabled": true,
+    "kotlin.compiler.jvm.target": "17",
+    "files.exclude": {
+        "**/.gradle": false,
+        "**/build": false
+    }
+}

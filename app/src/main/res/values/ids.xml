@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- IDs from activity_main.xml -->
+    <item name="nav_host_fragment" type="id" />
+    <item name="nav_view" type="id" />
+    
+    <!-- IDs from mobile_navigation.xml -->
+    <item name="mobile_navigation" type="id" />
+    <item name="navigation_home" type="id" />
+    <item name="navigation_log_entries" type="id" />
+    
+    <!-- IDs from fragment layouts -->
+    <item name="counterText" type="id" />
+    <item name="clickButton" type="id" />
+    <item name="logEntriesScrollView" type="id" />
+    <item name="logEntriesContainer" type="id" />
+    <item name="customAmountButton" type="id" />
+</resources>

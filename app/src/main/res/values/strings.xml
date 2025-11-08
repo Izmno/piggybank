@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PiggyBank</string>
+    <string name="click_button">Add €15</string>
+    <string name="counter_text">0</string>
+    <string name="title_home">Home</string>
+    <string name="title_log_entries">History</string>
+    <string name="add_custom_amount">Add custom amount</string>
+    <string name="dialog_add_custom_amount_title">Add Custom Amount</string>
+    <string name="dialog_amount_label">Amount (€)</string>
+    <string name="dialog_confirm">Add</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_invalid_amount">Please enter a valid positive amount</string>
+</resources>

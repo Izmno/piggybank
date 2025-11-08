@@ -1,0 +1,29 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Debug Android Device",
+            "request": "attach",
+            "hostName": "localhost",
+            "port": 5005,
+            "projectName": "piggybank",
+            "sourcePaths": [
+                "${workspaceFolder}/app/src"
+            ],
+        },
+        {
+            "type": "java",
+            "name": "Launch Android App on Device",
+            "request": "attach",
+            "hostName": "localhost",
+            "port": 5005,
+            "projectName": "piggybank",
+            "preLaunchTask": "android-build-install-launch-and-forward",
+            "sourcePaths": [
+                "${workspaceFolder}/app/src"
+            ],
+        }
+    ]
+}
+

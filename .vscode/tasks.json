@@ -1,0 +1,88 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "android-build-and-install",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": ["installDebug"],
+      "options": {
+        "shell": {
+          "executable": "/bin/zsh",
+          "args": ["-l", "-c"]
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "android-launch-app-debug",
+      "type": "shell",
+      "command": "adb",
+      "args": [
+        "shell",
+        "am",
+        "start",
+        "-D",
+        "-n",
+        "be.izmno.piggybank/.MainActivity"
+      ],
+      "options": {
+        "shell": {
+          "executable": "/bin/zsh",
+          "args": ["-l", "-c"]
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "android-setup-port-forward",
+      "type": "shell",
+      "command": "sleep 2; adb forward --remove tcp:5005 2>/dev/null || true; PID=$(adb shell pidof -s be.izmno.piggybank); if [ -z \"$PID\" ]; then echo 'App not running. Make sure the app is launched in debug mode.'; exit 1; fi; adb forward tcp:5005 jdwp:$PID; echo 'Port forwarding set up for PID: $PID on port 5005'",
+      "options": {
+        "shell": {
+          "executable": "/bin/zsh",
+          "args": ["-l", "-c"]
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "android-build-install-launch-and-forward",
+      "dependsOn": [
+        "android-build-and-install",
+        "android-launch-app-debug",
+        "android-setup-port-forward"
+      ],
+      "dependsOrder": "sequence",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": []
+    }
+  ]
+}

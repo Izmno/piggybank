@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#2C5F5F</color>
+    <color name="piggy_bank_fill">#E0E0E0</color>
+    <color name="piggy_bank_outline">#757575</color>
+</resources>

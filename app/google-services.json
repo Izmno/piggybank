@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "431578649801",
+    "project_id": "piggybank-c7a9a",
+    "storage_bucket": "piggybank-c7a9a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:431578649801:android:fb9ea8fa2cebc28f6b2918",
+        "android_client_info": {
+          "package_name": "be.izmno.piggybank"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhd4apjdV9_Rtg4UFAobSND6B5o2zgNWQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

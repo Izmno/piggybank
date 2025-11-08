@@ -6,24 +6,6 @@ plugins {
     id("com.google.firebase.appdistribution")
 }
 
-// Function to get git commit count for versionCode
-fun getVersionCode(): Int {
-    return try {
-        val process = ProcessBuilder("git", "rev-list", "--count", "HEAD")
-            .directory(project.rootDir)
-            .start()
-        process.waitFor()
-        val output = process.inputStream.bufferedReader().readText().trim()
-        if (output.isNotEmpty()) {
-            output.toInt()
-        } else {
-            1
-        }
-    } catch (e: Exception) {
-        1
-    }
-}
-
 android {
     namespace = "be.izmno.piggybank"
     compileSdk = 34
@@ -32,7 +14,7 @@ android {
         applicationId = "be.izmno.piggybank"
         minSdk = 24
         targetSdk = 34
-        versionCode = getVersionCode()
+        versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

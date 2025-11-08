@@ -13,7 +13,7 @@ if [ ! -f "$BUILD_FILE" ]; then
 fi
 
 # Extract current version code
-CURRENT_VERSION=$(grep -E "^\s*versionCode\s*=" "$BUILD_FILE" | sed -E 's/.*versionCode\s*=\s*([0-9]+).*/\1/')
+CURRENT_VERSION=$(grep -E "^\s*versionCode\s*=" "$BUILD_FILE" | sed -E 's/.*versionCode[[:space:]]*=[[:space:]]*([0-9]+).*/\1/')
 
 if [ -z "$CURRENT_VERSION" ]; then
     echo "Error: Could not find versionCode in $BUILD_FILE"

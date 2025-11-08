@@ -38,6 +38,22 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+            val envKeyPassword = System.getenv("KEY_PASSWORD") ?: System.getenv("KEYSTORE_PASSWORD") ?: ""
+            val keystoreAlias = System.getenv("KEYSTORE_ALIAS") ?: "piggybank"
+            val keystoreFile = file("piggybank-release.keystore")
+
+            if (keystoreFile.exists() && keystorePassword.isNotEmpty()) {
+                storeFile = keystoreFile
+                storePassword = keystorePassword
+                keyAlias = keystoreAlias
+                keyPassword = envKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -48,6 +64,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {

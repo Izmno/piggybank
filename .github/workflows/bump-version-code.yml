@@ -1,0 +1,72 @@
+name: Bump Version Code
+
+on:
+  workflow_run:
+    workflows: ["Deploy Release to Firebase App Distribution"]
+    types:
+      - completed
+
+jobs:
+  bump-version:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create branch
+        id: branch
+        run: |
+          BRANCH_NAME="bump-version-code-$(date +%s)"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          git checkout -b "$BRANCH_NAME"
+
+      - name: Run bump version code script
+        id: bump
+        run: |
+          chmod +x scripts/bump_version_code.sh
+          scripts/bump_version_code.sh
+          
+          # Extract the new version code for the commit message
+          NEW_VERSION=$(grep -E "^\s*versionCode\s*=" app/build.gradle.kts | sed -E 's/.*versionCode\s*=\s*([0-9]+).*/\1/')
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Commit changes
+        run: |
+          git add app/build.gradle.kts
+          git commit -m ":bookmark: bump version code to ${{ steps.bump.outputs.new_version }}"
+
+      - name: Push branch
+        run: |
+          git push origin "${{ steps.branch.outputs.branch_name }}"
+
+      - name: Create Pull Request and Enable Auto-merge
+        run: |
+          PR_NUMBER=$(gh pr create \
+            --title ":bookmark: Bump version code to ${{ steps.bump.outputs.new_version }}" \
+            --body "Automatically created after successful deployment" \
+            --base main \
+            --head "${{ steps.branch.outputs.branch_name }}" \
+            --json number \
+            --jq '.number')
+          
+          echo "Created PR #$PR_NUMBER"
+          
+          # Enable auto-merge with merge commit method
+          gh pr merge "$PR_NUMBER" --merge --auto
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
